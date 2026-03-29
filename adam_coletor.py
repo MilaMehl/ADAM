@@ -9,41 +9,46 @@ from datetime import datetime
 console = Console()
 
 def executar_adam_v2():
+    # Captura a escolha do usuário e guarda na variável 'cidade_alvo'
+    # O .strip().title() limpa espaços extras e deixa a Primeira Letra Maiúscula (ex:' palhoça' vira 'Palhoça')
+    cidade_alvo = console.input("[bold #ff3399]Digite a cidade alvo (ex: Palhoça, Florianópolis, São José): [/bold #ff3399]").strip().title()
+    
+    console.print(f"[yellow]Entendido. Focando os radares em: {cidade_alvo}...[/yellow]")
     console.print("[bold blue]ADAM v2.0:[/bold blue] Iniciando busca cirúrgica (Local + Remote)...")
 
     termo_ti = 'Estágio (Python OR Software OR "Developer" OR "Programador" OR "Dados")'
     ...
     
     try:
-        # Busca 1: Local (Grande Floripa)
+        # Busca 1: Local (SC)
         vagas_locais = scrape_jobs(
-            site_name=["indeed", "linkedin"],
-            search_term=termo_ti,
-            location="Florianópolis, SC; São José, SC; Palhoça, SC",
-            results_wanted=20,
-            country_indeed='brazil'
+            site_name = ["indeed", "linkedin"],
+            search_term = termo_ti,
+            location = f"{cidade_alvo}, SC",
+            results_wanted = 20,
+            country_indeed ='brazil'
         )
 
         # Busca 2: Remota (Brasil todo)
         vagas_remotas = scrape_jobs(
-            site_name=["indeed", "linkedin"],
-            search_term=termo_ti,
-            is_remote=True,
-            results_wanted=20,
-            country_indeed='brazil'
+            site_name =["indeed", "linkedin"],
+            search_term = termo_ti,
+            is_remote = True,
+            results_wanted = 20,
+            country_indeed = 'brazil'
         )
 
         # Une as duas buscas
         jobs = pd.concat([vagas_locais, vagas_remotas]).drop_duplicates(subset=['job_url'])
 
         if not jobs.empty:
-            # FILTRO AGRESSIVO: Remove ruído de Engenharia Tradicional
+            # FILTRO: Remove vagas de engenharia (por algum motivo aparece várias)
             excluir = ['Civil', 'Elétrica', 'Mecânica', 'Eletrotécnica', 'Logística', 'Comércio Exterior']
             pattern = '|'.join(excluir)
             jobs = jobs[~jobs['title'].str.contains(pattern, case=False, na=False)]
 
-            # --- FILTRO GEOGRÁFICO ESTRITO ---
-            locais_permitidos = ['SC', 'Florianópolis', 'São José', 'Palhoça', 'Remoto', 'Remote']
+            # Filtro geográfico
+            locais_permitidos = [cidade_alvo, 'Remoto', 'Remote']
             padrao_locais = '|'.join(locais_permitidos)
             jobs = jobs[jobs['location'].str.contains(padrao_locais, case=False, na=False)]
 
@@ -71,6 +76,12 @@ def executar_adam_v2():
             <style>
                 body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #121212; color: #e0e0e0; padding: 30px; }
                 h1 { color: #ff3399; margin-bottom: 5px; } /* Rosa Choque */
+                .descricao { 
+                    color: #b0b0b0;
+                    font-size: 1.1em; 
+                    margin-top: 0; 
+                    margin-bottom: 5px; /* Deixa um espacinho pequeno para a data */
+                }
                 .timestamp { color: #888; font-size: 0.9em; font-style: italic; margin-top: 0; margin-bottom: 20px; }
                 table { width: 100%; border-collapse: collapse; margin-top: 20px; background-color: #1e1e1e; box-shadow: 0 4px 8px rgba(0,0,0,0.2); }
                 th { background-color: #cc0066; color: white; padding: 15px; text-align: left; text-transform: uppercase; letter-spacing: 1px;} /* Rosa Escuro */
@@ -83,7 +94,7 @@ def executar_adam_v2():
             
             # 3. O Cabeçalho + Qual o horário da varredura
             cabecalho = f"""
-            <h1>Radar ADAM: Vagas de TI</h1>
+            <h1>Radar ADAM: Vagas de TI </h1>
             <p class="timestamp">Última varredura de vagas foi às {agora}.</p>
             """
             
